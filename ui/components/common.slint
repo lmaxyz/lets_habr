@@ -1,0 +1,277 @@
+import { Spinner, ScrollView, VerticalBox } from "std-widgets.slint";
+
+export component Button inherits Rectangle {
+    in-out property text <=> txt.text;
+    in-out property <bool> enabled: true;
+
+    callback clicked;
+    out property <bool> pressed <=> touch.pressed;
+
+    animate background {
+        easing: ease-in;
+        duration: 200ms;
+    }
+
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: root.background.darker(25%);
+    background: !root.enabled ? #518196 : touch.pressed ? #2d90bb : touch.has-hover ? #25a0e7 : #66bce0;
+    height: txt.preferred-height * 1.85;
+    min-width: txt.preferred-width + 20px;
+    txt := Text {
+        x: (parent.width - self.width) / 2 + (root.enabled && touch.pressed ? 2px : 0);
+        y: (parent.height - self.height) / 2 + (root.enabled && touch.pressed ? 1px : 0);
+        color: touch.pressed ? #fff : #eee;
+    }
+
+    touch := TouchArea {
+        clicked => {
+            if root.enabled {
+                root.clicked()
+            }
+        }
+    }
+}
+
+export component PagedList inherits VerticalLayout {
+    in-out property <int> current_page: 1;
+    in-out property <int> pages_count: 1;
+    in-out property <string> title_text;
+
+    in-out property <bool> is_loading: false;
+    private property <bool> pager_need: true;
+
+    callback data-requested(int);
+    callback data-loaded();
+
+    data-loaded => {
+        is_loading = false;
+        flk.viewport-y = 0;
+    }
+
+    alignment: LayoutAlignment.start;
+
+    Rectangle {
+        height: 100%;
+
+        VerticalLayout {
+            spacing: 20px;
+
+            title := Text {
+                text: title_text;
+                font-size: 36px;
+                font-weight: 600;
+                vertical-alignment: TextVerticalAlignment.center;
+                horizontal-alignment: TextHorizontalAlignment.center;
+            }
+
+            flk := Flickable {
+                property <length> prev_pos: 0;
+
+                changed viewport-y => {
+                    if self.viewport-y - 200px <= -(self.viewport-height - self.height) {
+                        pager_need = true;
+                    }
+                }
+
+                interactive: true;
+                viewport-height: flk_inner.preferred-height;
+
+                flk_inner := VerticalLayout {
+                    spacing: 10px;
+                    padding-left: 5px;
+
+                    @children
+
+                    Rectangle {
+                        height: pager.height;
+                    }
+                }
+
+                flicked => {
+                    if self.viewport-y <= prev_pos - 100px {
+                        prev_pos = self.viewport-y;
+                        pager_need = false;
+                    } else if self.viewport-y >= prev_pos + 100px {
+                        pager_need = true;
+                        prev_pos = self.viewport-y;
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            y: parent.y;
+            background: root.is_loading ? white.transparentize(0.3) : transparent;
+
+            if root.is_loading && parent.width > 0: Spinner {
+                height: parent.width / 5;
+                width: parent.width / 5;
+
+                indeterminate: true;
+            }
+        }
+
+        pager := HorizontalLayout {
+            y: pager_need ? parent.height - self.height : parent.height + 100px;
+            height: prev-btn.height;
+
+            alignment: LayoutAlignment.center;
+
+            animate y {
+                easing: ease-in;
+                duration: 250ms;
+            }
+
+            Rectangle {
+                width: 70%;
+                height: prev-btn.height + 20px;
+                border-top-left-radius: 25px;
+                border-top-right-radius: 25px;
+                background: whitesmoke.transparentize(0.1);
+                drop-shadow-blur: 15px;
+                drop-shadow-color: gray.transparentize(0.2);
+
+                VerticalLayout {
+                    alignment: LayoutAlignment.center;
+
+                    HorizontalLayout {
+                        alignment: LayoutAlignment.center;
+                        padding-top: 10px;
+                        padding-bottom: 10px;
+
+                        prev-btn := Button {
+                            width: self.height;
+                            text: "<";
+                            enabled: current_page > 1 && !is_loading;
+                            border-radius: self.width;
+
+                            clicked => {
+                                is_loading = true;
+                                current_page -= 1;
+                                data-requested(current_page);
+                            }
+                        }
+
+                        pages-info := Text {
+                            horizontal-alignment: TextHorizontalAlignment.center;
+                            vertical-alignment: TextVerticalAlignment.center;
+                            width: 40%;
+                            text: current_page + "/" + pages_count;
+                            color: black.brighter(0.4);
+                            font-weight: 600;
+                        }
+
+                        next-btn := Button {
+                            width: self.height;
+                            text: ">";
+                            enabled: current_page < pages_count && !is_loading;
+                            border-radius: self.width;
+
+                            clicked => {
+                                is_loading = true;
+                                current_page += 1;
+                                data-requested(current_page);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+export component Backwarder inherits Rectangle {
+    callback backwarded();
+
+    property <bool> backward_prepared: false;
+
+    pure function backward_offset() -> length {
+        (swipe-handler.current-position.x - swipe-handler.pressed-position.x) / 2
+    }
+
+    swipe_handler := SwipeGestureHandler {
+        handle-swipe-right: true;
+
+        moved => {
+            if self.current-position.x - self.pressed-position.x >= 100px {
+                backward_prepared = true;
+            } else {
+                backward_prepared = false;
+            }
+        }
+
+        swiped => {
+            if backward_prepared {
+                backwarded();
+            }
+            backward_prepared = false;
+        }
+
+        cancelled => {
+            backward_prepared = false;
+        }
+
+        inner := VerticalLayout {
+            x: backward_prepared ? 50px : swipe-handler.swiping ? backward_offset() : 0;
+
+            animate x {
+                easing: ease-out;
+                duration: 50ms;
+            }
+
+            @children
+        }
+    }
+
+    backward_icon := Rectangle {
+        x: backward_prepared ? -25px : swipe-handler.swiping ? backward_offset() - self.width - 20px : -70px;
+        y: 50px;
+        width: 50px;
+        height: backward_prepared ? 100px : 50px;
+
+        drop-shadow-color: whitesmoke;
+        drop-shadow-blur: 15px;
+        background: backward_prepared ? #25beff : #7acaec;
+        border-bottom-right-radius: 15px;
+        border-top-right-radius: 15px;
+
+        // visible: swipe-handler.swiping;
+
+        animate x {
+            easing: ease-out;
+            duration: 50ms;
+        }
+
+        animate height {
+            easing: ease-in-out-back;
+            duration: 200ms;
+        }
+
+        animate background {
+            easing: ease-in;
+            duration: 200ms;
+        }
+
+        Text {
+            text: "<";
+            color: whitesmoke;
+            font-weight: 600;
+        }
+    }
+}
+
+
+export component Activity inherits VerticalLayout {
+    in-out property <bool> active: false;
+
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 20px;
+    padding-right: 20px;
+
+    visible: active;
+}

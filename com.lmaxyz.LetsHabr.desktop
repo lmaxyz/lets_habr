@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=com.lmaxyz.LetsHabr
+Exec=/usr/bin/com.lmaxyz.LetsHabr
+Name=Let's Habr
+Name[ru]=Let's Habr
+
+[X-Sailjail]
+Permissions=Internet;UserDirs
+OrganizationName=com.lmaxyz
+ApplicationName=LetsHabr

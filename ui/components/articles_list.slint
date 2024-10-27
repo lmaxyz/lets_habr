@@ -1,0 +1,136 @@
+import { Button, VerticalBox, HorizontalBox, VerticalBox, ScrollView, ListView } from "std-widgets.slint";
+import { PagedList, Activity, Backwarder } from "common.slint";
+
+
+export struct ArticlePreviewData {
+    id: string,
+    title: string,
+    tags: [string],
+    published_at: string,
+    reading_time: int,
+    author: string,
+    complexity: string,
+    img_url: string,
+    image: image
+}
+
+
+component ArticleItem inherits Rectangle {
+    in property <ArticlePreviewData> article_data;
+
+    height: inner.height + 20px;
+
+    callback clicked(ArticlePreviewData);
+
+    inner := Rectangle {
+        property <length> inner_spacing: 20px;
+
+        height: title.y + title.height + inner_spacing;
+        padding: 25px;
+        background: #fffdf8;
+        
+        border-radius: 3px;
+        drop-shadow-color: gray.brighter(0.4);
+        drop-shadow-blur: 10px;
+
+        author := Text {
+            y: inner_spacing;
+            x: parent.padding;
+
+            text: article_data.author;
+            font-weight: 600;
+            font-size: 20px;
+            color: #237c97;
+        }
+
+        publish_date := Text {
+            y: author.y + author.height + 5px;
+            x: parent.padding;
+
+            text: article_data.published_at;
+            font-size: 18px;
+            font-weight: 600;
+            color: gray;
+        }
+
+        img := Image {
+            y: publish_date.y + publish_date.height + inner_spacing;
+            horizontal-alignment: ImageHorizontalAlignment.left;
+            source: article_data.image;
+            width: parent.width;
+            height: !has_image() ? 0 : self.preferred-height;
+        }
+
+        complexity := Text {
+            y: img.y + (has_image() ? img.height + inner_spacing : 0);
+            x: parent.padding;
+
+            text: !has_complexity() ? "" : article_data.complexity == "low" ? "Простой 😴" : article_data.complexity == "medium" ? "Средний 👍" : "Сложный ☠";
+            font-weight: 600;
+            font-size: 24px;
+            color: article_data.complexity == "low" ? green : article_data.complexity == "medium" ? orange : red;
+        }
+
+        title := Text {
+            width: parent.width - parent.padding * 2;
+            y: complexity.y + complexity.height + (article_data.complexity == "" ? 0 : inner_spacing);
+            x: parent.padding;
+    
+            text: article_data.title + " (" + article_data.reading-time + " мин)";
+            font-size: 28px;
+            font-weight: 800;
+            wrap: TextWrap.word-wrap;
+        }
+
+        pure function has_image() -> bool {
+            article_data.img-url != ""
+        }
+
+        pure function has_complexity() -> bool {
+            article_data.complexity != ""
+        }
+    
+        touch := TouchArea {
+            clicked => {
+                root.clicked(root.article_data);
+            }
+        }
+    }
+}
+
+
+export component ArticlesList inherits Activity {
+    in-out property <[ArticlePreviewData]> data;
+
+    callback show_article(string);
+    callback article-selected(ArticlePreviewData);
+    callback load_article_preview_img(int, string);
+    callback article_preview_loaded(int, image);
+
+    in-out property <int> current_index: 0;
+
+    article_preview_loaded(idx, img) => {
+        data[idx].image = img;
+    }
+
+    in-out property <int> current_page <=> inner.current_page;
+    in-out property <int> pages_count <=> inner.pages_count;
+    in-out property <string> title_text <=> inner.title_text;
+    in-out property <bool> is_loading <=> inner.is_loading;
+
+    callback data-requested <=> inner.data-requested;
+    callback data-loaded <=> inner.data-loaded;
+    callback backwarded <=> bwd.backwarded;
+
+    bwd := Backwarder {
+        inner := PagedList {
+            for i in data.length : ArticleItem {
+                article_data: data[i];
+        
+                clicked(article) => {
+                    root.article-selected(article)
+                }
+            }
+        }   
+    }
+}

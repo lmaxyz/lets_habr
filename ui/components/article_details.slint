@@ -1,0 +1,185 @@
+import { VerticalBox, HorizontalBox, Spinner, TextEdit, LineEdit } from "std-widgets.slint";
+import { Activity, Backwarder } from "common.slint";
+
+enum ContentType {
+    ContentImage,
+    ContentText
+}
+
+export enum TextType {
+    H1,
+    H2,
+    H3,
+    H4,
+    Common
+}
+
+struct ContentImage {
+    image_url: string,
+    data: image,
+}
+
+struct ContentText {
+    text_type: TextType,
+    text: string,
+}
+
+export struct ContentData {
+    content_type: ContentType,
+    text_content: ContentText,
+    image_content: ContentImage}
+
+export struct ArticleDetailsData {
+    title: string,
+    content: [ContentData]
+}
+
+component ArticleContentItem inherits HorizontalLayout {
+    in-out property <ContentData> content;
+
+    if content.content_type == ContentType.ContentImage: Image {
+        source: content.image-content.data;
+    }
+
+    if content.content_type == ContentType.ContentText: VerticalBox {
+        container := Rectangle {
+            width: 100%;
+            height: text-container.preferred-height;
+
+            text_container := TextInput {
+                property <bool> text_selected: self.anchor-position-byte-offset != self.cursor-position-byte-offset;
+                property <length> last_cursor_pos_x: 0;
+                property <length> last_cursor_pos_y: 0;
+
+                pure function text_font_size() -> length {
+                    if content.text-content.text-type == TextType.H1 {
+                        32px
+                    } else if content.text-content.text-type == TextType.H2 {
+                        30px
+                    } else if content.text-content.text-type == TextType.H3 {
+                        28px
+                    } else if content.text-content.text-type == TextType.H4 {
+                        26px
+                    } else {
+                        24px
+                    }
+                }
+
+                text: content.text-content.text;
+                font-size: text_font_size();
+                font-weight: content.text-content.text-type == TextType.Common ? 400 : 600;
+                wrap: word-wrap;
+                read-only: true;
+                selection-foreground-color: white;
+                selection-background-color: gray.transparentize(0.3);
+
+                cursor-position-changed(new_pos) => {
+                    copy_popup.close();
+                    popup_timer.running = false;
+                    if self.text_selected {
+                        self.last_cursor_pos_x = new_pos.x;
+                        self.last_cursor_pos_y = new-pos.y;
+                        popup_timer.running = true;
+                    }
+                }
+            }
+
+            copy_popup := PopupWindow {
+                x: text-container.last_cursor_pos_x + self.width > container.width ? container.width - self.width : text-container.last_cursor_pos_x;
+                y: text-container.last_cursor_pos_y + self.height;
+                width: txt_inner.preferred-width + 30px;
+                height: txt_inner.preferred-height + 20px;
+
+                Rectangle {
+                    background: #7acaec;
+                    drop-shadow-blur: 10px;
+                    drop-shadow-color: grey;
+                    border-radius: 5px;
+                    visible: text-container.text_selected;
+
+                    animate opacity {
+                        easing: ease-in;
+                        duration: 100ms;
+                    }
+
+                    txt_inner := Text {
+                        text: "Копировать";
+                        font-size: 16px;
+                        color: white;
+                    }
+
+                    TouchArea {
+                        clicked => {
+                            text_container.copy();
+                            text_container.clear-focus();
+                            parent.opacity = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        popup_timer := Timer {
+            interval: 1s;
+            running: false;
+
+            triggered => {
+                self.running = false;
+                copy_popup.show();
+            }
+        }
+    }
+}
+
+export component ArticleDetails inherits Activity {
+    in property <ArticleDetailsData> article;
+    in-out property <bool> is_loading: false;
+
+    changed article => {
+        self.is_loading = false;
+        flc.viewport-y = 0;
+    }
+
+    callback backwarded <=> bckwd.backwarded;
+
+    bckwd := Backwarder {
+        flc := Flickable {
+            interactive: true;
+            viewport-height: inner.preferred-height;
+
+            // Just for correct scrolling
+            // Rectangle {
+            //     TouchArea {}
+            // }
+
+            inner := VerticalBox {
+                spacing: 15px;
+
+                title := Text {
+                    text: article.title;
+
+                    wrap: TextWrap.word-wrap;
+                    font-size: 32px;
+                    font-weight: 900;
+                }
+
+                for content_elem in article.content: ArticleContentItem {
+                    content: content_elem;
+                }
+            }
+        }
+
+        if root.is_loading: Rectangle {
+            width: parent.width;
+            height: parent.height;
+            background: white.transparentize(0.3);
+
+            if root.is_loading: Spinner {
+                height: parent.width / 5;
+                width: parent.width / 5;
+
+                indeterminate: true;
+            }
+        }
+    }
+}

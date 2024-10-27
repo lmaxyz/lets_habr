@@ -1,0 +1,105 @@
+import { VerticalBox, HorizontalBox, VerticalBox, ScrollView, ListView, Spinner } from "std-widgets.slint";
+import { PagedList, Activity, Backwarder } from "common.slint";
+
+
+export struct HubData {
+    id: string,
+    title: string,
+    description: string,
+    image_url: string,
+    image: image
+}
+
+
+export component HubItem inherits Rectangle {
+    in-out property <HubData> hub_data;
+
+    callback clicked(HubData);
+
+    height: 90px;
+    
+    inner := Rectangle {
+        height: title.height + descr.height + self.padding-top * 2;
+        padding-left: 15px;
+        padding-top: 10px;
+
+        border-width: touch.pressed ? 3px : 2px;
+        border-color: touch.pressed ? grey.brighter(0.1) : grey.brighter(0.3);
+
+        background: white;
+
+        animate border-color {
+             duration: 200ms;
+             easing: ease-in;
+        }
+
+        animate border-width {
+            duration: 200ms;
+            easing: ease-in;
+        }
+
+        logo := Image {
+            x: parent.padding-left;
+            height: parent.height - parent.padding-top * 2;
+            width: self.height;
+            source: hub_data.image;
+        }
+
+        title := Text {
+            x: logo.width + parent.padding-left * 2;
+            y: parent.padding-top;
+            width: parent.width - logo.width - parent.padding-left * 3;
+            text: root.hub_data.title;
+
+            color: touch.pressed ? black : black.brighter(0.2);
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        descr := Text {     
+            x: logo.width + parent.padding-left * 2;
+            y: title.height + parent.padding-top;
+            width: parent.width - logo.width - parent.padding-left * 3;
+            text: root.hub_data.description;
+            color: gray;
+            font-size: 20px;
+        }
+
+        touch := TouchArea {
+            clicked => {
+                root.clicked(root.hub_data)
+            }
+        }
+    }
+}
+
+
+export component HubsList inherits Activity {
+    in-out property <[HubData]> data;
+
+    callback item-clicked(HubData);
+
+    in-out property <int> current_page <=> inner.current_page;
+    in-out property <int> pages_count <=> inner.pages_count;
+    in-out property <string> title_text <=> inner.title_text;
+    in-out property <bool> is_loading <=> inner.is_loading;
+
+    callback data-requested <=> inner.data-requested;
+    callback data-loaded <=> inner.data-loaded;
+
+    public function set_hub_icon(index: int, img: image) {
+        data[index].image = img;
+    }
+
+    inner := PagedList {
+        title_text: "Hubs";
+
+        for i in data.length : HubItem {
+            hub_data: data[i];
+    
+            clicked(hub) => {
+                item-clicked(hub)
+            }
+        }
+    }   
+}

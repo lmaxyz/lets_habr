@@ -1,0 +1,2 @@
+[target.armv7-unknown-linux-gnueabihf]
+linker="/opt/armv7-eabihf-glibc-bleeding-edge/bin/arm-buildroot-linux-gnueabihf-cc"

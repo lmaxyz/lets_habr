@@ -1,0 +1,155 @@
+import { ScrollView, VerticalBox, HorizontalBox, ListView, CheckBox, ComboBox, AboutSlint } from "std-widgets.slint";
+import { HubItem, HubsList, HubData } from "components/hubs_list.slint";
+import { ArticlesList, ArticlePreviewData } from "components/articles_list.slint";
+import { ArticleDetails, ArticleDetailsData, ContentData } from "components/article_details.slint";
+import { Button, PagedList, Backwarder } from "components/common.slint";
+
+
+export component AppWindow inherits Window {
+    title: "Let's Habr";
+
+    min-width: 720px;
+    min-height: 980px;
+
+    default-font-size: 32px;
+    background: @linear-gradient(135deg, #7acaec 0%, #feffee 50%, #f6f8c2 100%);
+    
+    in-out property <[HubData]> hubs_list <=> hubs.data;
+    in-out property <int> hubs_pages_count <=> hubs.pages_count;
+    in-out property <string> selected_hub_id;
+    callback hubs_loaded <=> hubs.data_loaded;
+    callback hubs_requested <=> hubs.data-requested;
+    public function set_hub_icon(idx: int, img: image) {
+        hubs.set_hub_icon(idx, img)
+    }
+
+    in-out property <[ArticlePreviewData]> articles_list <=> articles.data;
+    in-out property <int> articles_pages_count <=> articles.pages_count;
+    callback articles_loaded <=> articles.data_loaded;
+    callback load_article_preview_img <=> articles.load_article_preview_img;
+    callback article_preview_loaded <=> articles.article_preview_loaded;
+    callback articles_requested(string, int);
+
+    property <string> selected_article_id;
+    in property <ArticleDetailsData> article_details <=> article-details-ui.article;
+    callback article_details_requested(string);
+
+    Rectangle {
+        hubs := HubsList {
+            active: true;
+    
+            item-clicked(hub) => {
+                self.active = false;
+                articles.active = true;
+                if selected_hub_id != hub.id {
+                    selected_hub_id = hub.id;
+    
+                    articles.title_text = hub.title;
+                    articles.is_loading = true;
+                    articles.current_page = 1;
+                    articles_requested(hub.id, 1);
+                }
+            }
+        }
+
+        articles := ArticlesList {
+            property <length> target_width: parent.width - parent.padding * 2;
+    
+            height: parent.height - parent.padding * 2;
+    
+            article-selected(article) => {
+                self.active = false;
+                article-details-ui.active = true;
+                if selected_article_id != article.id {
+                    selected_article_id = article.id;
+                    article-details-ui.is_loading = true;
+                    root.article_details_requested(selected_article_id);
+                }
+            }
+    
+            data-requested(page) => {
+                root.articles_requested(selected_hub_id, page)
+            }
+
+            backwarded => {
+                self.active = false;
+                hubs.active = true;
+            }
+        }
+
+        article_details_ui := ArticleDetails {
+            property <bool> enabled: false;
+            property <length> target_width: parent.width - parent.padding * 2;
+
+            backwarded => {
+                self.active = false;
+                articles.active = true;
+            }
+        }
+
+        splash := VerticalLayout {
+            animate opacity {
+                duration: 600ms;
+            }
+
+            Rectangle {
+                background: @linear-gradient(135deg, #7acaec 0%, #feffee 50%, #f6f8c2 100%);
+                
+                width: 100%;
+                height: 100%;
+                
+                HorizontalLayout {
+                    alignment: center;
+
+                    VerticalLayout {
+                        alignment: center;
+
+                        Text {
+                            font-size: 48px;
+                            font-weight: 900;
+                            text: "Let's Habr";
+                            color: rgba(50, 50, 50, 1);
+                            horizontal-alignment: TextHorizontalAlignment.center;
+                        }
+                        Text {
+                            text: "made by lmaxyz";
+                            horizontal-alignment: center;
+                            font-size: 22px;
+                            color: gray;
+                        }
+                    }
+                }
+
+                VerticalLayout {
+                    alignment: end;
+
+                    HorizontalLayout {
+                        alignment: center;
+
+                        Rectangle {
+                            width: 30%;
+
+                            AboutSlint {}
+                        }
+                    }
+                }
+            }
+
+            Timer {
+                interval: 1500ms;
+                triggered => {
+                    self.running = false;
+                    splash.opacity = 0;
+                }
+            }
+
+            Timer {
+                interval: 2500ms;
+                triggered => {
+                    self.running = false;
+                    splash.visible = false;
+                }
+            }
+        }
+    }
+}
