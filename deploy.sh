@@ -24,10 +24,9 @@ fi
 SFDK_PATH="$AURORA_SDK_PATH/bin/sfdk";
 CURRENT_DIR="$(pwd)";
 
-# cargo update
-SLINT_SCALE_FACTOR=1.5 SLINT_DEBUG_PERFORMANCE=refresh_full_speed,overlay cargo build --release
+cross build --release --target x86_64-unknown-linux-gnu
 
-cp ./target/release/lets_habr ./com.lmaxyz.LetsHabr
+cp ./target/x86_64-unknown-linux-gnu/release/lets_habr ./com.lmaxyz.LetsHabr
 
 $SFDK_PATH config target="$BUILD_TARGET"
 $SFDK_PATH config device="$DEPLOY_DEVICE"
@@ -37,8 +36,9 @@ $SFDK_PATH engine exec -tt sb2 -t $BUILD_TARGET rpmsign-external sign -k $CURREN
 
 set +e
 
-$SFDK_PATH deploy --manual
-ssh -p 2223 -i $AURORA_SDK_PATH/vmshare/ssh/private_keys/sdk root@127.0.0.1 "pkcon -y remove com.lmaxyz.LetsHabr; pkcon install-local -y /home/defaultuser/RPMS/com.lmaxyz.LetsHabr-0.1-1.x86_64.rpm"
+$SFDK_PATH deploy --sdk --silent RPMS/com.lmaxyz.LetsHabr-0.1-1.x86_64.rpm
+# scp -P 2223 -i $AURORA_SDK_PATH/vmshare/ssh/private_keys/sdk ./RPMS/com.lmaxyz.LetsHabr-0.1-1.x86_64.rpm  root@127.0.0.1:/home/defaultuser/RPMS/
+# ssh -p 2223 -i $AURORA_SDK_PATH/vmshare/ssh/private_keys/sdk root@127.0.0.1 "pkcon install-local -y /home/defaultuser/RPMS/com.lmaxyz.LetsHabr-0.1-1.x86_64.rpm"
 
 rm ./com.lmaxyz.LetsHabr
 rm ./documentation.list

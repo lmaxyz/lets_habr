@@ -1,5 +1,5 @@
 import { VerticalBox, HorizontalBox, VerticalBox, ScrollView, ListView, Spinner } from "std-widgets.slint";
-import { PagedList, Activity, Backwarder } from "common.slint";
+import { PagedList, Activity } from "common.slint";
 
 
 export struct HubData {
@@ -7,19 +7,15 @@ export struct HubData {
     title: string,
     description: string,
     image_url: string,
-    image: image
+    image: image,
 }
 
 
 export component HubItem inherits Rectangle {
     in-out property <HubData> hub_data;
-
     callback clicked(HubData);
 
-    height: 90px;
-    
     inner := Rectangle {
-        height: title.height + descr.height + self.padding-top * 2;
         padding-left: 15px;
         padding-top: 10px;
 
@@ -29,8 +25,8 @@ export component HubItem inherits Rectangle {
         background: white;
 
         animate border-color {
-             duration: 200ms;
-             easing: ease-in;
+            duration: 200ms;
+            easing: ease-in;
         }
 
         animate border-width {
@@ -38,31 +34,38 @@ export component HubItem inherits Rectangle {
             easing: ease-in;
         }
 
-        logo := Image {
-            x: parent.padding-left;
-            height: parent.height - parent.padding-top * 2;
-            width: self.height;
-            source: hub_data.image;
-        }
+        HorizontalLayout {
+            padding: 15px;
+            spacing: 15px;
 
-        title := Text {
-            x: logo.width + parent.padding-left * 2;
-            y: parent.padding-top;
-            width: parent.width - logo.width - parent.padding-left * 3;
-            text: root.hub_data.title;
+            logo := Image {
+                height: 120px;
+                width: 120px;
+                source: hub_data.image;
+            }
 
-            color: touch.pressed ? black : black.brighter(0.2);
-            font-size: 28px;
-            font-weight: 600;
-        }
+            VerticalLayout {
+                alignment: start;
+                spacing: 10px;
 
-        descr := Text {     
-            x: logo.width + parent.padding-left * 2;
-            y: title.height + parent.padding-top;
-            width: parent.width - logo.width - parent.padding-left * 3;
-            text: root.hub_data.description;
-            color: gray;
-            font-size: 20px;
+                title := Text {
+                    text: root.hub_data.title;
+
+                    color: touch.pressed ? black : black.brighter(0.2);
+                    font-size: 30px;
+                    font-weight: 600;
+                }
+
+                descr := Text {
+                    text: root.hub_data.description;
+
+                    vertical-alignment: top;
+                    color: gray;
+                    overflow: TextOverflow.elide;
+                    wrap: word-wrap;
+                    font-size: 24px;
+                }
+            }
         }
 
         touch := TouchArea {
@@ -72,7 +75,6 @@ export component HubItem inherits Rectangle {
         }
     }
 }
-
 
 export component HubsList inherits Activity {
     in-out property <[HubData]> data;
@@ -94,12 +96,12 @@ export component HubsList inherits Activity {
     inner := PagedList {
         title_text: "Hubs";
 
-        for i in data.length : HubItem {
+        for i in data.length: HubItem {
             hub_data: data[i];
-    
+
             clicked(hub) => {
                 item-clicked(hub)
             }
         }
-    }   
+    }
 }

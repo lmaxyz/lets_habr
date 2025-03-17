@@ -10,7 +10,11 @@ use tokio::task::AbortHandle;
 mod habr_client;
 mod utils;
 
-use habr_client::{article::ArticleContent, hub::get_hubs, HabrClient};
+use habr_client::{
+    article::ArticleContent,
+    hub::get_hubs,
+    HabrClient,
+};
 
 use utils::donwload_img;
 
@@ -18,14 +22,18 @@ slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
     // SimpleLogger::new().with_level(LevelFilter::Debug).init().unwrap();
+
+    std::env::set_var("SLINT_DEBUG_PERFORMANCE", "refresh_full_speed,overlay");
+
     let tokio_rt = tokio::runtime::Builder::new_multi_thread()
-        .thread_name("slint app tokio runtime")
+        .thread_name("LetsHabr-tokio-runtime")
         .enable_io()
         .enable_time()
         .build()
         .unwrap();
 
     let ui = AppWindow::new().unwrap();
+
     let habr_client = HabrClient::new();
 
     let hubs_icons_downloading_handlers: Arc<Mutex<Vec<AbortHandle>>> =
@@ -124,35 +132,36 @@ fn main() -> Result<(), slint::PlatformError> {
                     {
                         let title = article_details.0.into();
                         let mut images = Vec::new();
+                        let mut download_image_handlers = Vec::new();
                         for content in article_details.1.iter() {
                             match content {
                                 ArticleContent::Image(img_src) => {
                                     let image_url = img_src.clone();
-                                    let mut download_image_handlers = Vec::new();
+
                                     download_image_handlers.push(tokio_rt_handle_inner.spawn(
                                         async move { donwload_img(image_url.as_str()).await },
                                     ));
-
-                                    for download_res in download_image_handlers.into_iter() {
-                                        let image_data = match download_res.await {
-                                            Ok(res) => {
-                                                res.unwrap_or(DynamicImage::new_rgba8(480, 280))
-                                            }
-                                            Err(_) => DynamicImage::new_rgba8(480, 280),
-                                        };
-
-                                        let img_height = image_data.height();
-                                        let img_width = image_data.width();
-                                        let img_buf = SharedPixelBuffer::clone_from_slice(
-                                            &image_data.into_rgba8(),
-                                            img_width,
-                                            img_height,
-                                        );
-                                        images.push(img_buf);
-                                    }
                                 }
                                 ArticleContent::Text(..) => {}
                             };
+                        }
+
+                        for download_res in download_image_handlers.into_iter() {
+                            let image_data = match download_res.await {
+                                Ok(res) => {
+                                    res.unwrap_or(DynamicImage::new_rgba8(480, 280))
+                                }
+                                Err(_) => DynamicImage::new_rgba8(480, 280),
+                            };
+
+                            let img_height = image_data.height();
+                            let img_width = image_data.width();
+                            let img_buf = SharedPixelBuffer::clone_from_slice(
+                                &image_data.into_rgba8(),
+                                img_width,
+                                img_height,
+                            );
+                            images.push(img_buf);
                         }
 
                         ui_clone
@@ -190,9 +199,7 @@ fn main() -> Result<(), slint::PlatformError> {
                                 }
                                 let article_details = ArticleDetailsData {
                                     title,
-                                    content: ModelRc::from(Rc::new(VecModel::from(
-                                        content_data_vec,
-                                    ))),
+                                    content: ModelRc::from(Rc::new(VecModel::from(content_data_vec))),
                                 };
                                 w.set_article_details(article_details);
                             })

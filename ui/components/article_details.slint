@@ -104,7 +104,7 @@ component ArticleContentItem inherits HorizontalLayout {
 
                     txt_inner := Text {
                         text: "Копировать";
-                        font-size: 16px;
+                        font-size: 24px;
                         color: white;
                     }
 
@@ -140,46 +140,44 @@ export component ArticleDetails inherits Activity {
         flc.viewport-y = 0;
     }
 
-    callback backwarded <=> bckwd.backwarded;
+    with_backward: true;
 
-    bckwd := Backwarder {
-        flc := Flickable {
-            interactive: true;
-            viewport-height: inner.preferred-height;
+    flc := Flickable {
+        interactive: true;
+        viewport-height: inner.preferred-height;
 
-            // Just for correct scrolling
-            // Rectangle {
-            //     TouchArea {}
-            // }
+        // Just for correct scrolling
+        // Rectangle {
+        //     TouchArea {}
+        // }
 
-            inner := VerticalBox {
-                spacing: 15px;
+        inner := VerticalBox {
+            spacing: 15px;
 
-                title := Text {
-                    text: article.title;
+            title := Text {
+                text: article.title;
 
-                    wrap: TextWrap.word-wrap;
-                    font-size: 32px;
-                    font-weight: 900;
-                }
+                wrap: TextWrap.word-wrap;
+                font-size: 32px;
+                font-weight: 900;
+            }
 
-                for content_elem in article.content: ArticleContentItem {
-                    content: content_elem;
-                }
+            for content_elem in article.content: ArticleContentItem {
+                content: content_elem;
             }
         }
+    }
 
-        if root.is_loading: Rectangle {
-            width: parent.width;
-            height: parent.height;
-            background: white.transparentize(0.3);
+    if root.is_loading: Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: white.transparentize(0.3);
 
-            if root.is_loading: Spinner {
-                height: parent.width / 5;
-                width: parent.width / 5;
+        if root.is_loading: Spinner {
+            height: parent.width / 5;
+            width: parent.width / 5;
 
-                indeterminate: true;
-            }
+            indeterminate: true;
         }
     }
 }

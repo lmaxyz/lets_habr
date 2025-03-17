@@ -13,7 +13,7 @@ export component AppWindow inherits Window {
 
     default-font-size: 32px;
     background: @linear-gradient(135deg, #7acaec 0%, #feffee 50%, #f6f8c2 100%);
-    
+
     in-out property <[HubData]> hubs_list <=> hubs.data;
     in-out property <int> hubs_pages_count <=> hubs.pages_count;
     in-out property <string> selected_hub_id;
@@ -37,13 +37,13 @@ export component AppWindow inherits Window {
     Rectangle {
         hubs := HubsList {
             active: true;
-    
+
             item-clicked(hub) => {
                 self.active = false;
                 articles.active = true;
                 if selected_hub_id != hub.id {
                     selected_hub_id = hub.id;
-    
+
                     articles.title_text = hub.title;
                     articles.is_loading = true;
                     articles.current_page = 1;
@@ -54,9 +54,9 @@ export component AppWindow inherits Window {
 
         articles := ArticlesList {
             property <length> target_width: parent.width - parent.padding * 2;
-    
+
             height: parent.height - parent.padding * 2;
-    
+
             article-selected(article) => {
                 self.active = false;
                 article-details-ui.active = true;
@@ -66,7 +66,7 @@ export component AppWindow inherits Window {
                     root.article_details_requested(selected_article_id);
                 }
             }
-    
+
             data-requested(page) => {
                 root.articles_requested(selected_hub_id, page)
             }
@@ -88,16 +88,14 @@ export component AppWindow inherits Window {
         }
 
         splash := VerticalLayout {
-            animate opacity {
-                duration: 600ms;
-            }
+            animate opacity { duration: 600ms; }
 
             Rectangle {
                 background: @linear-gradient(135deg, #7acaec 0%, #feffee 50%, #f6f8c2 100%);
-                
+
                 width: 100%;
                 height: 100%;
-                
+
                 HorizontalLayout {
                     alignment: center;
 
@@ -111,6 +109,7 @@ export component AppWindow inherits Window {
                             color: rgba(50, 50, 50, 1);
                             horizontal-alignment: TextHorizontalAlignment.center;
                         }
+
                         Text {
                             text: "made by lmaxyz";
                             horizontal-alignment: center;
@@ -129,7 +128,7 @@ export component AppWindow inherits Window {
                         Rectangle {
                             width: 30%;
 
-                            AboutSlint {}
+                            AboutSlint { }
                         }
                     }
                 }

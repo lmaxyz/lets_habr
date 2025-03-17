@@ -55,14 +55,15 @@ pub async fn get_hubs(page: u8) -> Result<(Vec<HubItem>, usize), Error> {
         .query(&[
             ("page", page.to_string().as_str()),
             ("fl", "ru"),
-            ("hl", "ru")
+            ("hl", "ru"),
+            ("perPage", "20")
         ])
         .send().await?;
 
     let resp_parsed: HubsResponse = serde_json::from_slice(&resp.bytes().await.unwrap()).expect("[!] Error with response parsing");
 
     let mut hubs: Vec<HubItem> = resp_parsed.hub_refs.into_values().collect();
-    
+
     hubs.sort_by(|f, s| {
         f.title.cmp(&s.title)
     });

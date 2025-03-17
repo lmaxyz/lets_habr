@@ -1,0 +1,19 @@
+[build]
+pre-build = [
+    "apt update && apt install libdbus-1-dev libfontconfig1-dev:$CROSS_DEB_ARCH libfreetype-dev:$CROSS_DEB_ARCH -y",
+]
+
+[target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt update && apt install python3 libfontconfig-dev:$CROSS_DEB_ARCH libfreetype-dev:$CROSS_DEB_ARCH -y",
+]
+
+[target.armv7-unknown-linux-gnueabihf]
+# Алтернативный вариант - использовать кастомный докерфайл
+# dockerfile = "./Dockerfile.armv7-unknown-linux-gnueabihf"
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt update && apt upgrade -y",
+    "apt install python3 clang ninja-build libicu-dev libstdc++-10-dev:$CROSS_DEB_ARCH libfontconfig-dev:$CROSS_DEB_ARCH libfreetype-dev:$CROSS_DEB_ARCH -y",
+]

@@ -64,7 +64,7 @@ impl HabrClient {
                 ("page", page.to_string().as_str()),
                 ("hub", hub),
                 ("sort", "all"),
-                ("perPage", "10"),
+                ("perPage", "15"),
             ])
             .send()
             .await?;
@@ -103,45 +103,9 @@ async fn extract_content_from_html(text: String) -> Vec<ArticleContent> {
     parse_content_recursively(html.root_element())
 }
 
-fn get_element_text<'a>(element: ElementRef<'a>) -> String {
-    element
-        .text()
-        .map(|txt| txt.trim())
-        .collect::<Vec<&str>>()
-        .join(" ")
-}
-
 fn parse_content_recursively<'a>(element: ElementRef<'a>) -> Vec<ArticleContent> {
     let mut res = Vec::new();
-    let parsed_content = match element.value().name() {
-        "img" => {
-            if let Some(img_src) = element.attr("src") {
-                Some(ArticleContent::Image(img_src.to_string()))
-            } else {
-                None
-            }
-        }
-        "p" => Some(ArticleContent::Text(
-            get_element_text(element),
-            TextType::Common,
-        )),
-        "h2" => Some(ArticleContent::Text(
-            get_element_text(element),
-            TextType::Header(2),
-        )),
-        "h3" => Some(ArticleContent::Text(
-            get_element_text(element),
-            TextType::Header(3),
-        )),
-        "h4" => Some(ArticleContent::Text(
-            get_element_text(element),
-            TextType::Header(4),
-        )),
-        _tag @ _ => {
-            // println!("[!] Unsupported tag: {}", tag);
-            None
-        }
-    };
+    let parsed_content = element.try_into().ok();
     if let Some(content) = parsed_content {
         res.push(content);
     }
@@ -149,4 +113,56 @@ fn parse_content_recursively<'a>(element: ElementRef<'a>) -> Vec<ArticleContent>
         res.extend(parse_content_recursively(inner_elem))
     }
     res
+}
+
+fn get_element_text<'a>(element: &ElementRef<'a>) -> String {
+    element
+        .text()
+        .map(|txt| txt.trim())
+        .collect::<Vec<&str>>()
+        .join(" ")
+}
+
+impl TryFrom<&ElementRef<'_>> for ArticleContent {
+    type Error = ();
+
+    fn try_from(element: &ElementRef<'_>) -> Result<Self, Self::Error> {
+        match element.value().name() {
+            "img" => {
+                if let Some(img_src) = element.attr("src") {
+                    Ok(ArticleContent::Image(img_src.to_string()))
+                } else {
+                    Err(())
+                }
+            }
+            "p" => Ok(ArticleContent::Text(
+                get_element_text(element),
+                TextType::Common,
+            )),
+            "h2" => Ok(ArticleContent::Text(
+                get_element_text(element),
+                TextType::Header(2),
+            )),
+            "h3" => Ok(ArticleContent::Text(
+                get_element_text(element),
+                TextType::Header(3),
+            )),
+            "h4" => Ok(ArticleContent::Text(
+                get_element_text(element),
+                TextType::Header(4),
+            )),
+            _tag @ _ => {
+                // println!("[!] Unsupported tag: {}", tag);
+                Err(())
+            }
+        }
+    }
+}
+
+impl TryFrom<ElementRef<'_>> for ArticleContent {
+    type Error = ();
+
+    fn try_from(element: ElementRef<'_>) -> Result<Self, Self::Error> {
+        (&element).try_into()
+    }
 }

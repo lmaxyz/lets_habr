@@ -11,16 +11,16 @@ export struct ArticlePreviewData {
     author: string,
     complexity: string,
     img_url: string,
-    image: image
+    image: image,
 }
 
 
 component ArticleItem inherits Rectangle {
     in property <ArticlePreviewData> article_data;
 
-    height: inner.height + 20px;
-
     callback clicked(ArticlePreviewData);
+
+    height: inner.height + 20px;
 
     inner := Rectangle {
         property <length> inner_spacing: 20px;
@@ -28,7 +28,7 @@ component ArticleItem inherits Rectangle {
         height: title.y + title.height + inner_spacing;
         padding: 25px;
         background: #fffdf8;
-        
+
         border-radius: 3px;
         drop-shadow-color: gray.brighter(0.4);
         drop-shadow-blur: 10px;
@@ -75,7 +75,7 @@ component ArticleItem inherits Rectangle {
             width: parent.width - parent.padding * 2;
             y: complexity.y + complexity.height + (article_data.complexity == "" ? 0 : inner_spacing);
             x: parent.padding;
-    
+
             text: article_data.title + " (" + article_data.reading-time + " мин)";
             font-size: 28px;
             font-weight: 800;
@@ -89,7 +89,7 @@ component ArticleItem inherits Rectangle {
         pure function has_complexity() -> bool {
             article_data.complexity != ""
         }
-    
+
         touch := TouchArea {
             clicked => {
                 root.clicked(root.article_data);
@@ -97,7 +97,6 @@ component ArticleItem inherits Rectangle {
         }
     }
 }
-
 
 export component ArticlesList inherits Activity {
     in-out property <[ArticlePreviewData]> data;
@@ -120,17 +119,18 @@ export component ArticlesList inherits Activity {
 
     callback data-requested <=> inner.data-requested;
     callback data-loaded <=> inner.data-loaded;
-    callback backwarded <=> bwd.backwarded;
 
-    bwd := Backwarder {
+    with_backward: true;
+
+    Rectangle {
         inner := PagedList {
-            for i in data.length : ArticleItem {
+            for i in data.length: ArticleItem {
                 article_data: data[i];
-        
+
                 clicked(article) => {
                     root.article-selected(article)
                 }
             }
-        }   
+        }
     }
 }

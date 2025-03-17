@@ -66,11 +66,20 @@ export component PagedList inherits VerticalLayout {
             }
 
             flk := Flickable {
+                viewport-width: root.width;
                 property <length> prev_pos: 0;
 
+                pure function almost_down() -> bool {
+                    return self.viewport-y - 200px <= -(self.viewport-height - self.height);
+                }
+
                 changed viewport-y => {
-                    if self.viewport-y - 200px <= -(self.viewport-height - self.height) {
+                    if self.viewport-y <= prev_pos - 100px {
+                        prev_pos = self.viewport-y;
+                        pager_need = false;
+                    } else if self.viewport-y >= prev_pos + 100px || almost_down() {
                         pager_need = true;
+                        prev_pos = self.viewport-y;
                     }
                 }
 
@@ -85,16 +94,6 @@ export component PagedList inherits VerticalLayout {
 
                     Rectangle {
                         height: pager.height;
-                    }
-                }
-
-                flicked => {
-                    if self.viewport-y <= prev_pos - 100px {
-                        prev_pos = self.viewport-y;
-                        pager_need = false;
-                    } else if self.viewport-y >= prev_pos + 100px {
-                        pager_need = true;
-                        prev_pos = self.viewport-y;
                     }
                 }
             }
@@ -183,15 +182,26 @@ export component PagedList inherits VerticalLayout {
     }
 }
 
-
 export component Backwarder inherits Rectangle {
     callback backwarded();
 
     property <bool> backward_prepared: false;
+    property <length> swipe-offset-threshold: 50px;
+    property <length> real-swipe-offset;
 
-    pure function backward_offset() -> length {
-        (swipe-handler.current-position.x - swipe-handler.pressed-position.x) / 2
-    }
+    out property <length> swipe-offset: real-swipe-offset > swipe-offset-threshold ? swipe-offset-threshold : real-swipe-offset;
+
+    states [
+        swiping when swipe_handler.swiping: {
+            real-swipe-offset: (swipe_handler.current-position.x - swipe_handler.pressed-position.x) / 2;
+            out {
+                animate real-swipe-offset {
+                    duration: 50ms;
+                    easing: ease-out;
+                }
+            }
+        }
+    ]
 
     swipe_handler := SwipeGestureHandler {
         handle-swipe-right: true;
@@ -216,19 +226,14 @@ export component Backwarder inherits Rectangle {
         }
 
         inner := VerticalLayout {
-            x: backward_prepared ? 50px : swipe-handler.swiping ? backward_offset() : 0;
-
-            animate x {
-                easing: ease-out;
-                duration: 50ms;
-            }
+            x: backward_prepared ? 100px : swipe-offset > 0 ? swipe-offset : 0;
 
             @children
         }
     }
 
     backward_icon := Rectangle {
-        x: backward_prepared ? -25px : swipe-handler.swiping ? backward_offset() - self.width - 20px : -70px;
+        x: backward_prepared ? 0 : swipe-handler.swiping ? swipe-offset - self.width : -50px;
         y: 50px;
         width: 50px;
         height: backward_prepared ? 100px : 50px;
@@ -264,14 +269,29 @@ export component Backwarder inherits Rectangle {
     }
 }
 
-
-export component Activity inherits VerticalLayout {
+export component Activity inherits Rectangle {
     in-out property <bool> active: false;
-
-    padding-top: 15px;
-    padding-bottom: 15px;
-    padding-left: 20px;
-    padding-right: 20px;
-
+    in property <bool> with_backward;
     visible: active;
+
+    callback backwarded <=> bwd.backwarded;
+
+    VerticalLayout {
+        x: 0 + bwd.swipe-offset;
+
+        padding-top: 15px;
+        padding-bottom: 15px;
+        padding-left: 20px;
+        padding-right: 20px;
+
+        @children
+    }
+
+    bwd := Backwarder {
+        x: 0;
+        width: 100px;
+
+        // background: rgba(255, 0, 0, 0.5);
+        visible: with_backward && root.visible;
+    }
 }
