@@ -1,4 +1,4 @@
-import { VerticalBox, HorizontalBox, Spinner, TextEdit, LineEdit } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, Spinner, TextEdit, LineEdit, ScrollView } from "std-widgets.slint";
 import { Activity, Backwarder } from "common.slint";
 
 enum ContentType {
@@ -53,15 +53,15 @@ component ArticleContentItem inherits HorizontalLayout {
 
                 pure function text_font_size() -> length {
                     if content.text-content.text-type == TextType.H1 {
-                        32px
-                    } else if content.text-content.text-type == TextType.H2 {
-                        30px
-                    } else if content.text-content.text-type == TextType.H3 {
                         28px
-                    } else if content.text-content.text-type == TextType.H4 {
+                    } else if content.text-content.text-type == TextType.H2 {
                         26px
-                    } else {
+                    } else if content.text-content.text-type == TextType.H3 {
                         24px
+                    } else if content.text-content.text-type == TextType.H4 {
+                        20px
+                    } else {
+                        18px
                     }
                 }
 
@@ -104,7 +104,7 @@ component ArticleContentItem inherits HorizontalLayout {
 
                     txt_inner := Text {
                         text: "Копировать";
-                        font-size: 24px;
+                        font-size: 18px;
                         color: white;
                     }
 
@@ -142,29 +142,12 @@ export component ArticleDetails inherits Activity {
 
     with_backward: true;
 
-    flc := Flickable {
-        interactive: true;
-        viewport-height: inner.preferred-height;
-
-        // Just for correct scrolling
-        // Rectangle {
-        //     TouchArea {}
-        // }
-
-        inner := VerticalBox {
-            spacing: 15px;
-
-            title := Text {
-                text: article.title;
-
-                wrap: TextWrap.word-wrap;
-                font-size: 32px;
-                font-weight: 900;
-            }
-
-            for content_elem in article.content: ArticleContentItem {
-                content: content_elem;
-            }
+    flc := ScrollView {
+        vertical-scrollbar-policy: always-off;
+        horizontal-scrollbar-policy: always-off;
+        
+        for content_elem in article.content: ArticleContentItem {
+            content: content_elem;
         }
     }
 

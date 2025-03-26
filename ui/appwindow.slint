@@ -11,7 +11,7 @@ export component AppWindow inherits Window {
     min-width: 720px;
     min-height: 980px;
 
-    default-font-size: 32px;
+    default-font-size: 24px;
     background: @linear-gradient(135deg, #7acaec 0%, #feffee 50%, #f6f8c2 100%);
 
     in-out property <[HubData]> hubs_list <=> hubs.data;
@@ -88,6 +88,8 @@ export component AppWindow inherits Window {
         }
 
         splash := VerticalLayout {
+            visible: self.opacity > 0;
+
             animate opacity { duration: 600ms; }
 
             Rectangle {

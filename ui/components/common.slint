@@ -1,7 +1,8 @@
-import { Spinner, ScrollView, VerticalBox } from "std-widgets.slint";
+import { Spinner, ScrollView, VerticalBox, ListView } from "std-widgets.slint";
 
 export component Button inherits Rectangle {
     in-out property text <=> txt.text;
+    in-out property font-size <=> txt.font-size;
     in-out property <bool> enabled: true;
 
     callback clicked;
@@ -39,15 +40,9 @@ export component PagedList inherits VerticalLayout {
     in-out property <string> title_text;
 
     in-out property <bool> is_loading: false;
-    private property <bool> pager_need: true;
+    in-out property <bool> pager_need: true;
 
     callback data-requested(int);
-    callback data-loaded();
-
-    data-loaded => {
-        is_loading = false;
-        flk.viewport-y = 0;
-    }
 
     alignment: LayoutAlignment.start;
 
@@ -59,44 +54,13 @@ export component PagedList inherits VerticalLayout {
 
             title := Text {
                 text: title_text;
-                font-size: 36px;
+                font-size: 24px;
                 font-weight: 600;
                 vertical-alignment: TextVerticalAlignment.center;
                 horizontal-alignment: TextHorizontalAlignment.center;
+                wrap: word-wrap;
             }
-
-            flk := Flickable {
-                viewport-width: root.width;
-                property <length> prev_pos: 0;
-
-                pure function almost_down() -> bool {
-                    return self.viewport-y - 200px <= -(self.viewport-height - self.height);
-                }
-
-                changed viewport-y => {
-                    if self.viewport-y <= prev_pos - 100px {
-                        prev_pos = self.viewport-y;
-                        pager_need = false;
-                    } else if self.viewport-y >= prev_pos + 100px || almost_down() {
-                        pager_need = true;
-                        prev_pos = self.viewport-y;
-                    }
-                }
-
-                interactive: true;
-                viewport-height: flk_inner.preferred-height;
-
-                flk_inner := VerticalLayout {
-                    spacing: 10px;
-                    padding-left: 5px;
-
-                    @children
-
-                    Rectangle {
-                        height: pager.height;
-                    }
-                }
-            }
+            @children
         }
 
         Rectangle {
@@ -244,8 +208,6 @@ export component Backwarder inherits Rectangle {
         border-bottom-right-radius: 15px;
         border-top-right-radius: 15px;
 
-        // visible: swipe-handler.swiping;
-
         animate x {
             easing: ease-out;
             duration: 50ms;
@@ -272,12 +234,17 @@ export component Backwarder inherits Rectangle {
 export component Activity inherits Rectangle {
     in-out property <bool> active: false;
     in property <bool> with_backward;
+
     visible: active;
+    opacity: active ? 1 : 0;
+    
+    animate opacity { duration: 500ms; }
 
     callback backwarded <=> bwd.backwarded;
 
     VerticalLayout {
         x: 0 + bwd.swipe-offset;
+        width: 100%;
 
         padding-top: 15px;
         padding-bottom: 15px;
@@ -290,8 +257,6 @@ export component Activity inherits Rectangle {
     bwd := Backwarder {
         x: 0;
         width: 100px;
-
-        // background: rgba(255, 0, 0, 0.5);
         visible: with_backward && root.visible;
     }
 }

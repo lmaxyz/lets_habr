@@ -14,11 +14,11 @@ export struct HubData {
 export component HubItem inherits Rectangle {
     in-out property <HubData> hub_data;
     callback clicked(HubData);
+    height: inner_hl.preferred-height + 15px;
 
     inner := Rectangle {
-        padding-left: 15px;
-        padding-top: 10px;
-
+        y: 15px;
+        height: inner_hl.preferred-height;
         border-width: touch.pressed ? 3px : 2px;
         border-color: touch.pressed ? grey.brighter(0.1) : grey.brighter(0.3);
 
@@ -34,13 +34,13 @@ export component HubItem inherits Rectangle {
             easing: ease-in;
         }
 
-        HorizontalLayout {
+        inner_hl := HorizontalLayout {
             padding: 15px;
             spacing: 15px;
 
             logo := Image {
-                height: 120px;
-                width: 120px;
+                height: 80px;
+                width: 80px;
                 source: hub_data.image;
             }
 
@@ -52,20 +52,24 @@ export component HubItem inherits Rectangle {
                     text: root.hub_data.title;
 
                     color: touch.pressed ? black : black.brighter(0.2);
-                    font-size: 30px;
+                    font-size: 20px;
                     font-weight: 600;
+
+                    wrap: word-wrap;
+                    overflow: elide;
                 }
 
                 descr := Text {
-                    text: root.hub_data.description;
-
                     vertical-alignment: top;
+
+                    text: root.hub_data.description;
                     color: gray;
-                    overflow: TextOverflow.elide;
+                    overflow: elide;
                     wrap: word-wrap;
-                    font-size: 24px;
+                    font-size: 16px;
                 }
             }
+
         }
 
         touch := TouchArea {
@@ -87,21 +91,50 @@ export component HubsList inherits Activity {
     in-out property <bool> is_loading <=> inner.is_loading;
 
     callback data-requested <=> inner.data-requested;
-    callback data-loaded <=> inner.data-loaded;
+    callback data-loaded;
+
+    data-loaded => {
+        inner.is_loading = false;
+        lst.viewport-y = 0;
+    }
 
     public function set_hub_icon(index: int, img: image) {
         data[index].image = img;
     }
 
     inner := PagedList {
-        title_text: "Hubs";
+        title_text: "Хабы";
 
-        for i in data.length: HubItem {
-            hub_data: data[i];
+        lst := ScrollView {
+            vertical-scrollbar-policy: always-off;
+            horizontal-scrollbar-policy: always-off;
 
-            clicked(hub) => {
-                item-clicked(hub)
+            viewport-width: root.width;
+
+            property <length> prev_pos: 0;
+
+            pure function almost_down() -> bool {
+                return self.viewport-y - 200px <= -(self.viewport-height - self.height);
+            }
+
+            changed viewport-y => {
+                if self.viewport-y <= prev_pos - 100px {
+                    prev_pos = self.viewport-y;
+                    inner.pager_need = false;
+                } else if self.viewport-y >= prev_pos + 100px || almost_down() {
+                    inner.pager_need = true;
+                    prev_pos = self.viewport-y;
+                }
+            }
+
+            for i in data.length: HubItem {
+                hub_data: data[i];
+    
+                clicked(hub) => {
+                    item-clicked(hub)
+                }
             }
         }
+
     }
 }

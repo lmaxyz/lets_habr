@@ -39,7 +39,7 @@ component ArticleItem inherits Rectangle {
 
             text: article_data.author;
             font-weight: 600;
-            font-size: 20px;
+            font-size: 16px;
             color: #237c97;
         }
 
@@ -48,7 +48,7 @@ component ArticleItem inherits Rectangle {
             x: parent.padding;
 
             text: article_data.published_at;
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 600;
             color: gray;
         }
@@ -67,7 +67,7 @@ component ArticleItem inherits Rectangle {
 
             text: !has_complexity() ? "" : article_data.complexity == "low" ? "Простой 😴" : article_data.complexity == "medium" ? "Средний 👍" : "Сложный ☠";
             font-weight: 600;
-            font-size: 24px;
+            font-size: 20px;
             color: article_data.complexity == "low" ? green : article_data.complexity == "medium" ? orange : red;
         }
 
@@ -77,7 +77,7 @@ component ArticleItem inherits Rectangle {
             x: parent.padding;
 
             text: article_data.title + " (" + article_data.reading-time + " мин)";
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 800;
             wrap: TextWrap.word-wrap;
         }
@@ -118,17 +118,45 @@ export component ArticlesList inherits Activity {
     in-out property <bool> is_loading <=> inner.is_loading;
 
     callback data-requested <=> inner.data-requested;
-    callback data-loaded <=> inner.data-loaded;
+    callback data-loaded;
+
+    data-loaded => {
+        inner.is_loading = false;
+        lst.viewport-y = 0;
+    }
 
     with_backward: true;
 
     Rectangle {
         inner := PagedList {
-            for i in data.length: ArticleItem {
-                article_data: data[i];
+            lst := ScrollView {
+                vertical-scrollbar-policy: always-off;
+                horizontal-scrollbar-policy: always-off;
 
-                clicked(article) => {
-                    root.article-selected(article)
+                viewport-width: root.width;
+                property <length> prev_pos: 0;
+
+                pure function almost_down() -> bool {
+                    return self.viewport-y - 200px <= -(self.viewport-height - self.height);
+                }
+
+                changed viewport-y => {
+                    debug(self.viewport-y);
+                    if self.viewport-y <= prev_pos - 100px {
+                        prev_pos = self.viewport-y;
+                        inner.pager_need = false;
+                    } else if self.viewport-y >= prev_pos + 100px || almost_down() {
+                        inner.pager_need = true;
+                        prev_pos = self.viewport-y;
+                    }
+                }
+
+                for i in data.length: ArticleItem {
+                    article_data: data[i];
+    
+                    clicked(article) => {
+                        root.article-selected(article)
+                    }
                 }
             }
         }

@@ -30,6 +30,7 @@ tokio = { version = "1.41.0", default-features = false, features = [
 ] }
 reqwest = { version = "0.12.*", default-features = false, features = [
     "rustls-tls",
+    # "default-tls",
     "http2",
 ] }
 chrono = "0.4"
@@ -39,10 +40,9 @@ chrono = "0.4"
 [build-dependencies]
 slint-build = "1.10"
 
-[profile.release]
-opt-level = 3
-
 
 [patch.crates-io]
 # winit = { git = "https://github.com/lmaxyz/winit", branch = "aurora" }
 glutin = { git = "https://github.com/lmaxyz/glutin", branch = "aurora_device_fix" }
+i-slint-core = {path = "../../rust/slint/internal/core"}
+slint = {path = "../../rust/slint/api/rs/slint"}

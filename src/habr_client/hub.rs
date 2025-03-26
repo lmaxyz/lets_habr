@@ -56,7 +56,7 @@ pub async fn get_hubs(page: u8) -> Result<(Vec<HubItem>, usize), Error> {
             ("page", page.to_string().as_str()),
             ("fl", "ru"),
             ("hl", "ru"),
-            ("perPage", "20")
+            ("perPage", "100")
         ])
         .send().await?;
 
