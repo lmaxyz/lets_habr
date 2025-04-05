@@ -15,5 +15,5 @@ pre-build = [
 pre-build = [
     "dpkg --add-architecture $CROSS_DEB_ARCH",
     "apt update && apt upgrade -y",
-    "apt install python3 clang ninja-build libicu-dev libstdc++-10-dev:$CROSS_DEB_ARCH libfontconfig-dev:$CROSS_DEB_ARCH libfreetype-dev:$CROSS_DEB_ARCH -y",
+    "apt install python3 libfontconfig-dev:$CROSS_DEB_ARCH libfreetype6-dev:$CROSS_DEB_ARCH -y",
 ]

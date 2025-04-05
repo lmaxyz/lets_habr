@@ -145,9 +145,11 @@ export component ArticleDetails inherits Activity {
     flc := ScrollView {
         vertical-scrollbar-policy: always-off;
         horizontal-scrollbar-policy: always-off;
-        
-        for content_elem in article.content: ArticleContentItem {
-            content: content_elem;
+
+        VerticalLayout {
+            for content_elem in article.content: ArticleContentItem {
+                content: content_elem;
+            }
         }
     }
 

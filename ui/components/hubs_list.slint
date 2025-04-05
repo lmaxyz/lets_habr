@@ -69,7 +69,6 @@ export component HubItem inherits Rectangle {
                     font-size: 16px;
                 }
             }
-
         }
 
         touch := TouchArea {
@@ -109,7 +108,9 @@ export component HubsList inherits Activity {
             vertical-scrollbar-policy: always-off;
             horizontal-scrollbar-policy: always-off;
 
-            viewport-width: root.width;
+            viewport-height: 120px * data.length;
+            // viewport-width: parent.width;
+            // width: parent.width;
 
             property <length> prev_pos: 0;
 
@@ -129,12 +130,14 @@ export component HubsList inherits Activity {
 
             for i in data.length: HubItem {
                 hub_data: data[i];
-    
+
+                y: 120px * i;
+                width: parent.visible-width;
+
                 clicked(hub) => {
                     item-clicked(hub)
                 }
             }
         }
-
     }
 }

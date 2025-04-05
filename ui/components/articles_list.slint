@@ -100,13 +100,12 @@ component ArticleItem inherits Rectangle {
 
 export component ArticlesList inherits Activity {
     in-out property <[ArticlePreviewData]> data;
+    in-out property <int> current_index: 0;
 
     callback show_article(string);
     callback article-selected(ArticlePreviewData);
     callback load_article_preview_img(int, string);
     callback article_preview_loaded(int, image);
-
-    in-out property <int> current_index: 0;
 
     article_preview_loaded(idx, img) => {
         data[idx].image = img;
@@ -133,7 +132,6 @@ export component ArticlesList inherits Activity {
                 vertical-scrollbar-policy: always-off;
                 horizontal-scrollbar-policy: always-off;
 
-                viewport-width: root.width;
                 property <length> prev_pos: 0;
 
                 pure function almost_down() -> bool {
@@ -141,7 +139,6 @@ export component ArticlesList inherits Activity {
                 }
 
                 changed viewport-y => {
-                    debug(self.viewport-y);
                     if self.viewport-y <= prev_pos - 100px {
                         prev_pos = self.viewport-y;
                         inner.pager_need = false;
@@ -151,11 +148,14 @@ export component ArticlesList inherits Activity {
                     }
                 }
 
-                for i in data.length: ArticleItem {
-                    article_data: data[i];
-    
-                    clicked(article) => {
-                        root.article-selected(article)
+                scroll-inner := VerticalLayout {
+                    for i in data.length: ArticleItem {
+                        article_data: data[i];
+                        width: lst.visible-width;
+
+                        clicked(article) => {
+                            root.article-selected(article)
+                        }
                     }
                 }
             }

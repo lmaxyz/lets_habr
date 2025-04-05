@@ -64,7 +64,7 @@ impl HabrClient {
                 ("page", page.to_string().as_str()),
                 ("hub", hub),
                 ("sort", "all"),
-                ("perPage", "15"),
+                ("perPage", "20"),
             ])
             .send()
             .await?;

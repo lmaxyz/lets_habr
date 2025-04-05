@@ -1,6 +1,6 @@
 [package]
 name = "lets_habr"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 build = "build.rs"
 
@@ -25,8 +25,6 @@ scraper = "0.23.1"
 tokio = { version = "1.41.0", default-features = false, features = [
     "rt-multi-thread",
     "time",
-    # "macros",
-    # "net",
 ] }
 reqwest = { version = "0.12.*", default-features = false, features = [
     "rustls-tls",
@@ -40,9 +38,28 @@ chrono = "0.4"
 [build-dependencies]
 slint-build = "1.10"
 
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
+
+
+[package.metadata.generate-rpm]
+name = "com.lmaxyz.LetsHabr"
+license = "GPL3"
+summary = "Habr client"
+release = "1"
+url = "https://github.com/lmaxyz/lets_habr"
+assets = [
+    { source = "target/armv7-unknown-linux-gnueabihf/release/lets_habr", dest = "/usr/bin/com.lmaxyz.LetsHabr", mode = "755" },
+    { source = "rpm/com.lmaxyz.LetsHabr.desktop", dest = "/usr/share/applications/com.lmaxyz.LetsHabr.desktop", mode = "644" },
+    { source = "rpm/icons/86x86/com.lmaxyz.LetsHabr.png", dest = "/usr/share/icons/hicolor/86x86/apps/com.lmaxyz.LetsHabr.png", mode = "644" },
+    { source = "rpm/icons/108x108/com.lmaxyz.LetsHabr.png", dest = "/usr/share/icons/hicolor/108x108/apps/com.lmaxyz.LetsHabr.png", mode = "644" },
+    { source = "rpm/icons/128x128/com.lmaxyz.LetsHabr.png", dest = "/usr/share/icons/hicolor/128x128/apps/com.lmaxyz.LetsHabr.png", mode = "644" },
+    { source = "rpm/icons/172x172/com.lmaxyz.LetsHabr.png", dest = "/usr/share/icons/hicolor/172x172/apps/com.lmaxyz.LetsHabr.png", mode = "644" },
+]
+
 
 [patch.crates-io]
-# winit = { git = "https://github.com/lmaxyz/winit", branch = "aurora" }
+winit = { git = "https://github.com/lmaxyz/winit", branch = "aurora" }
 glutin = { git = "https://github.com/lmaxyz/glutin", branch = "aurora_device_fix" }
-i-slint-core = {path = "../../rust/slint/internal/core"}
-slint = {path = "../../rust/slint/api/rs/slint"}
